@@ -1,192 +1,216 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#pragma warning(disable : 4996)
 
-typedef struct {
-	int m, n;
-	double ** v;
-} mat_t, *mat;
-
-mat matrix_new(int m, int n)
+void print_matrix(double** A, int N, int M)
 {
-	mat x = malloc(sizeof(mat_t));
-	x->v = malloc(sizeof(double*) * m);
-	x->v[0] = calloc(sizeof(double), m * n);
-	for (int i = 0; i < m; i++)
-		x->v[i] = x->v[0] + n * i;
-	x->m = m;
-	x->n = n;
-	return x;
-}
-
-void matrix_delete(mat m)
-{
-	free(m->v[0]);
-	free(m->v);
-	free(m);
-}
-
-void matrix_transpose(mat m)
-{
-	for (int i = 0; i < m->m; i++) {
-		for (int j = 0; j < i; j++) {
-			double t = m->v[i][j];
-			m->v[i][j] = m->v[j][i];
-			m->v[j][i] = t;
-		}
-	}
-}
-
-mat matrix_copy(int n, double** a, int m)
-{
-	mat x = matrix_new(m, n);
-	for (int i = 0; i < m; i++)
-		for (int j = 0; j < n; j++)
-			x->v[i][j] = a[i][j];
-	return x;
-}
-
-mat matrix_mul(mat x, mat y)
-{
-	if (x->n != y->m) return 0;
-	mat r = matrix_new(x->m, y->n);
-	for (int i = 0; i < x->m; i++)
-		for (int j = 0; j < y->n; j++)
-			for (int k = 0; k < x->n; k++)
-				r->v[i][j] += x->v[i][k] * y->v[k][j];
-	return r;
-}
-
-mat matrix_minor(mat x, int d)
-{
-	mat m = matrix_new(x->m, x->n);
-	for (int i = 0; i < d; i++)
-		m->v[i][i] = 1;
-	for (int i = d; i < x->m; i++)
-		for (int j = d; j < x->n; j++)
-			m->v[i][j] = x->v[i][j];
-	return m;
-}
-
-/* c = a + b * s */
-double *vmadd(double a[], double b[], double s, double c[], int n)
-{
-	for (int i = 0; i < n; i++)
-		c[i] = a[i] + s * b[i];
-	return c;
-}
-
-/* m = I - v v^T */
-mat vmul(double v[], int n)
-{
-	mat x = matrix_new(n, n);
-	for (int i = 0; i < n; i++)
-		for (int j = 0; j < n; j++)
-			x->v[i][j] = -2 * v[i] * v[j];
-	for (int i = 0; i < n; i++)
-		x->v[i][i] += 1;
-
-	return x;
-}
-
-/* ||x|| */
-double vnorm(double x[], int n)
-{
-	double sum = 0;
-	for (int i = 0; i < n; i++) sum += x[i] * x[i];
-	return sqrt(sum);
-}
-
-/* y = x / d */
-double* vdiv(double x[], double d, double y[], int n)
-{
-	for (int i = 0; i < n; i++) y[i] = x[i] / d;
-	return y;
-}
-
-/* take c-th column of m, put in v */
-double* mcol(mat m, double *v, int c)
-{
-	for (int i = 0; i < m->m; i++)
-		v[i] = m->v[i][c];
-	return v;
-}
-
-void matrix_show(mat m)
-{
-	for (int i = 0; i < m->m; i++) {
-		for (int j = 0; j < m->n; j++) {
-			printf(" %8.3f", m->v[i][j]);
+	printf("\n");
+	for (int i = 0; i < N; i++) {
+		for (int j = 0; j < M; j++) {
+			printf("%*.29lf ", 6, A[i][j]);
 		}
 		printf("\n");
 	}
-	printf("\n");
 }
 
-void householder(mat m, mat *R, mat *Q)
-{
-	mat q[m->m];
-	mat z = m, z1;
-	for (int k = 0; k < m->n && k < m->m - 1; k++) {
-		double e[m->m], x[m->m], a;
-		z1 = matrix_minor(z, k);
-		if (z != m) matrix_delete(z);
-		z = z1;
 
-		mcol(z, x, k);
-		a = vnorm(x, m->m);
-		if (m->v[k][k] > 0) a = -a;
-
-		for (int i = 0; i < m->m; i++)
-			e[i] = (i == k) ? 1 : 0;
-
-		vmadd(x, e, a, e, m->m);
-		vdiv(e, vnorm(e, m->m), e, m->m);
-		q[k] = vmul(e, m->m);
-		z1 = matrix_mul(q[k], z);
-		if (z != m) matrix_delete(z);
-		z = z1;
+// tested, works
+// creates n x m matrix
+double** create_matrix(int c, int r) { // c is length of column, r is length of row
+	double** A = (double**)malloc(c * sizeof(double*));
+	if (A == NULL) {
+		printf("Memory allocation error in create_matrix");
+		return NULL;
 	}
-	matrix_delete(z);
-	*Q = q[0];
-	*R = matrix_mul(q[0], m);
-	for (int i = 1; i < m->n && i < m->m - 1; i++) {
-		z1 = matrix_mul(q[i], *Q);
-		if (i > 1) matrix_delete(*Q);
-		*Q = z1;
-		matrix_delete(q[i]);
+	for (int i = 0; i < c; i++) {
+		A[i] = (double*)malloc(r * sizeof(double));
 	}
-	matrix_delete(q[0]);
-	z = matrix_mul(*Q, m);
-	matrix_delete(*R);
-	*R = z;
-	matrix_transpose(*Q);
+	return A;
 }
 
-double in[][3] = {
-	{ 12, -51,   4},
-	{  6, 167, -68},
-	{ -4,  24, -41},
-	{ -1, 1, 0},
-	{ 2, 0, 3},
-};
 
-int main()
-{
-	mat R, Q;
-	mat x = matrix_copy(3, in, 5);
-	householder(x, &R, &Q);
-
-	puts("Q"); matrix_show(Q);
-	puts("R"); matrix_show(R);
-
-	// to show their product is the input matrix
-	mat m = matrix_mul(Q, R);
-	puts("Q * R"); matrix_show(m);
-
-	matrix_delete(x);
-	matrix_delete(R);
-	matrix_delete(Q);
-	matrix_delete(m);
-	return 0;
+double* create_vector(int c) {
+	return (double*)malloc(c * sizeof(double));
 }
+
+
+double** read_matrix(FILE* file_m, FILE* file_r, int* rang) {
+	fscanf(file_r, "%i", rang); // read rang
+	double** matrix = create_matrix(*rang, *rang); // for householders method extended matrix is used
+	for (int i = 0; i < *rang; i++) {
+		for (int j = 0; j < *rang; j++) {
+			fscanf(file_m, "%lf; ", &matrix[i][j]);
+		}
+	}
+	return matrix;
+}
+
+double** read_b(FILE* file_rp, int rang) {
+	double** b = create_matrix(rang, 1);
+	for (int i = 0; i < rang; i++) {
+		fscanf(file_rp, "%lf; ", &b[i][0]);
+	}
+	return b;
+}
+
+// tested, works
+// frees n x (any size) matrix/vector
+void free_matrix(double** A, int n) { // there's n for sure
+	for (int i = 0; i < n; i++) {
+		free(A[i]);
+	}
+	free(A);
+}
+
+// multiplication of c x c matrix on c x r matrix
+double** matrix_multiply(int c, int r, double** H, double** A) { //M is the rows of Matrix H, K is the columns of Matrix A, and N is the "count" of these parts that you have to add.
+	double** A1 = create_matrix(c, r);
+	for (int i = 0; i < c; i++) {
+		for (int j = 0; j < r; j++) {
+			A1[i][j] = 0;
+			for (int k = 0; k < c; k++) {
+				A1[i][j] += H[i][k] * A[k][j];
+			}
+		}
+	}
+	return A1;
+}
+
+double* create_zero_vector(int n) {
+	double* x = (double*)malloc(n * sizeof(double));
+	for (int i = 0; i < n; i++) {
+		x[i] = 0;
+	}
+	return x;
+}
+
+// returns vector-row
+double* vector_w(double* a, int r) {
+	double norm = vector_norm_2(a, r);
+	double beta = (a[0] <= 0) ? norm : -norm;
+	double mu = 1 / (2 * beta*beta - 2 * beta*a[0]); // we check that norm != 0 in householders method
+
+	double* w = (double*)create_vector(r);
+	w[0] = mu * (a[0] - beta);
+	for (int i = 0; i < r; i++) {
+		w[i] = mu * a[i];
+	}
+	return w;
+}
+
+
+// householders matrix is square.
+double** householder_matrix(double* a, int ñ) {
+
+	double* w = vector_w(a, ñ);
+	double** H = create_e_matrix(ñ, ñ);
+
+	for (int i = 0; i < ñ; i++) {
+		for (int j = 0; j < ñ; j++) {
+			H[i][j] -= 2 * (w[i] * w[j]);
+		}
+	}
+
+	free(w);
+	return H;
+}
+
+double** enlarge_matrix(double** m, int n) {
+	double** new_m = create_matrix(n + 1, n + 1);
+	for (int i = 0; i < n + 1; i++) {
+		for (int j = 0; j < n + 1; j++) {
+			if (i == 0 && j == 0) {
+				new_m[i][j] = 1;
+			}
+			else if (i == 0 || j == 0) {
+				new_m[i][j] = 0;
+			}
+			else {
+				new_m[i][j] = m[i - 1][j - 1];
+			}
+		}
+	}
+	free_matrix(m, n);
+	return new_m;
+}
+
+
+void householders_qr_decomposition(double** A, int c, double*** Q, double*** R) {
+	double** A1 = create_matrix(c, c);
+	for (int i = 0; i < c; i++) {
+		double** A_t = transposed_matrix(A, c, c);
+
+		double* u = (A_t[i] + i);
+
+		double* v = create_vector(c - i);
+		if (u[0] < 0) {
+			v[0] = vector_norm_2(u, c - i);
+		}
+		else {
+			v[0] = -vector_norm_2(u, c - i);
+		}
+		for (int j = 1; j < c - i; j++) {
+			v[j] = 0;
+		}
+
+		double** w = create_matrix(1, c);
+		for (int j = 0; j < c - i; j++) {
+			w[0][j] = u[j] - v[j];
+		}
+		for (int j = c - i; j < c; j++) {
+			w[0][j] = 0;
+		}
+		double w_norm = vector_norm_2(w[0], c - i);
+		if (w_norm == 0) {
+			continue;
+		}
+		double** P = create_e_matrix(c - i, c - i);
+		for (int m = 0; m < c - i; m++) {
+			for (int n = 0; n < c - i; n++) {
+				P[m][n] -= (2 / (w_norm*w_norm)) * w[0][m] * w[0][n];
+			}
+		}
+		int rang_diff = c - i;
+		while (rang_diff != c) {
+			P = enlarge_matrix(P, rang_diff);
+			rang_diff++;
+		}
+		if (i = 0) {
+			(*Q) = P;
+		}
+		else {
+			double** Q1 = matrix_multiply(c, c, (*Q), P);
+			free_matrix((*Q), c);
+			(*Q) = Q1;
+		}
+		A_n(c, i, w, A);
+
+
+		free_matrix(A_t, c);
+		free(v);
+		free(w);
+	}
+	(*R) = A;
+	free_matrix(A, c);
+}
+
+
+
+double* qr_doubleshift_decomposition(double** A, int n, int eps) {
+	double** Q = NULL;
+	double** R = NULL;
+
+	double** P = create_e_matrix(c - i, c - i);
+	for (int m = 0; m < c - i; m++) {
+		for (int n = 0; n < c - i; n++) {
+			P[m][n] -= (2 / (w_norm*w_norm)) * w[0][m] * w[0][n];
+		}
+	}
+	int rang_diff = c - i;
+	while (rang_diff != c) {
+		P = enlarge_matrix(P, rang_diff);
+		rang_diff++;
+	}
+}
+
