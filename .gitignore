@@ -6,3 +6,5 @@ packages/
 *.vcxproj*
 *.csv
 
+*.png
+*.sln
