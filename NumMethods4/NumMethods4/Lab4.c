@@ -47,14 +47,6 @@ double** read_matrix(FILE* file_m, FILE* file_r, int* rang) {
 	return matrix;
 }
 
-double** read_b(FILE* file_rp, int rang) {
-	double** b = create_matrix(rang, 1);
-	for (int i = 0; i < rang; i++) {
-		fscanf(file_rp, "%lf; ", &b[i][0]);
-	}
-	return b;
-}
-
 // tested, works
 // frees n x (any size) matrix/vector
 void free_matrix(double** A, int n) { // there's n for sure
@@ -167,49 +159,47 @@ double** enlarge_matrix(double** m, int n) {
 }
 
 
-void householders_qr_decomposition(double** A, double*** Q, double*** R, int c) {
+double** hessenberg_form(double** A, double*** Q, double*** R, int c) { // reduction to the Hessenberg form by Householders method
+	double** B = NULL;
 	double** A1 = create_matrix(c, c);
-	double** B1 = create_matrix(c, 1);
-	for (int i = 0; i < c; i++) {
+	for (int i = 0; i < c - 2; i++) {
 		double** A_t = transposed_matrix(A, c, c);
 
-		double* u = (A_t[i] + i);
-
-		double* v = create_vector(c - i);
-		if (u[0] < 0) {
-			v[0] = vector_norm_2(u, c - i);
-		}
-		else {
-			v[0] = -vector_norm_2(u, c - i);
-		}
-		for (int j = 1; j < c - i; j++) {
-			v[j] = 0;
-		}
-
-		double** w = create_matrix(1, c);
-		for (int j = 0; j < c - i; j++) {
-			w[0][j] = u[j] - v[j];
-		}
-		for (int j = c - i; j < c; j++) {
-			w[0][j] = 0;
-		}
-		double w_norm = vector_norm_2(w[0], c - i);
-		if (w_norm == 0) {
+		double* u = (A_t[i] + i + 1);
+		double s1 = (A[i + 1][i] >= 0) ? -1 : 1;
+		s1 *= vector_norm_2(u, c - i - 1);
+		printf("s = %.3lf\n", s1);
+		if (s1 == 0) {
 			continue;
 		}
-		double** P = create_e_matrix(c - i, c - i);
-		for (int m = 0; m < c - i; m++) {
-			for (int n = 0; n < c - i; n++) {
-				P[m][n] -= (2 / (w_norm*w_norm)) * w[0][m] * w[0][n];
+		double mu = 1 / (sqrt(2 * s1*(s1 - A[i + 1][i])));
+		printf("mu = %.3lf\n", mu);
+		double** w = create_matrix(1, c);
+		for (int j = 0; j < c; j++) {
+			if (j <= i) {
+				w[0][j] = 0;
+			}
+			else if (j == i + 1) {
+				w[0][j] = mu * (A[j][i] - s1);
+			}
+			else if (j > i + 1) {
+				w[0][j] = mu * A[j][i];
 			}
 		}
-		int rang_diff = c - i;
+
+		double** P = create_e_matrix(c, c);
+		for (int m = 0; m < c; m++) {
+			for (int n = 0; n < c; n++) {
+				P[m][n] -= 2 * w[0][m] * w[0][n];
+			}
+		}
+		int rang_diff = c;
 		while (rang_diff != c) {
 			P = enlarge_matrix(P, rang_diff);
 			rang_diff++;
 		}
-		//printf("\nP = \n");
-		//print_matrix(P, 3, 3);
+		printf("\nH = \n");
+		print_matrix(P, 3, 3);
 		if (i == 0) {
 			(*Q) = P;
 		}
@@ -221,39 +211,68 @@ void householders_qr_decomposition(double** A, double*** Q, double*** R, int c) 
 		double** A1 = matrix_multiply(c, c, P, A);
 		free_matrix(A, c);
 		A = A1;
-		//printf("\nA = \n");
-		//print_matrix(A, 3, 3);
+		if (B == NULL) {
+			B = matrix_multiply(c, c, A, P);
+		}
+		else {
+			double** B1 = matrix_multiply(c, c, P, B);
+			double** B2 = matrix_multiply(c, c, B1, P);
+			free_matrix(B1, c);
+			free_matrix(B, c);
+			B = B2;
+		}
+		printf("\nA = \n");
+		print_matrix(A, 3, 3);
 
 
 		free_matrix(A_t, c);
-		free(v);
+		//free(v);
 		free(w);
+	}
+	(*R) = A;
+	return B;
+	//printf("\nR = \n");
+	//print_matrix((*R), 3, 3);
+	//printf("\nQ = \n");
+	//print_matrix((*Q), 3, 3);
+}
+
+void givens_decomposition(double** A, double*** Q, double*** R, int c) {
+	printf("\n\ngivens decomp\n\n");
+	for (int j = 0; j < c - 1; j++) {
+		double t = A[j][j] / A[j + 1][j];
+		double cos = 1 / sqrt(1 + t * t);
+		double sin = t * cos;
+		double** G = create_e_matrix(c, c);
+		G[j][j] = sin;
+		G[j + 1][j] = -cos;
+		G[j + 1][j + 1] = sin;
+		G[j][j + 1] = cos;
+		printf("\nG = \n");
+		print_matrix(G, 3, 3);
+		double** A1 = matrix_multiply(c, c, G, A);
+		free_matrix(A, c);
+		A = A1;
+		printf("\nA = \n");
+		print_matrix(A, 3, 3);
+		if (j == 0) {
+			(*Q) = transposed_matrix(G,c,c);
+			free_matrix(G, c);
+		}
+		else {
+			double** G_t = transposed_matrix(G, c, c);
+			double** Q1 = matrix_multiply(c, c, (*Q), G_t);
+			free_matrix((*Q), c);
+			free_matrix(G_t, c);
+			free_matrix(G, c);
+			(*Q) = Q1;
+		}
 	}
 	(*R) = A;
 	printf("\nR = \n");
 	print_matrix((*R), 3, 3);
 	printf("\nQ = \n");
 	print_matrix((*Q), 3, 3);
-}
-
-double* RotationsMethod(double** A, int n) {
-	double* X = create_zero_vector(n);
-	double cos, sin, a, b, tmp;
-	for (int i = 0; i < n; i++) { //column counter
-		for (int j = i + 1; j < n; j++) { //string numer counter
-			a = A[i][i];
-			b = A[j][i];
-			cos = a / sqrt(a * a + b * b);
-			sin = b / sqrt(a * a + b * b);
-			// cycle for inner product k is number of a column that * on cos and sin matrix
-			for (int k = i; k < n; k++) {
-				tmp = A[i][k];
-				A[i][k] = cos * A[i][k] + sin * A[j][k];
-				A[j][k] = -sin * tmp + cos * A[j][k];
-			}
-		}
-	}
-	return X;
 }
 
 
@@ -268,13 +287,36 @@ bool eigennum_found(double** A, int n, int eps) {
 	return true;
 }
 
+double** matrix_diff(double** A, double** B, int c) {
+	double** C = create_matrix(c, c);
+	for (int i = 0; i, c; i++) {
+		for (int j = 0; j < c; j++) {
+			C[i][j] = A[i][j] - B[i][j];
+		}
+	}
+	return C;
+}
+
+double** matrix_sum(double** A, double** B, int c) {
+	double** C = create_matrix(c, c);
+	for (int i = 0; i, c; i++) {
+		for (int j = 0; j < c; j++) {
+			C[i][j] = A[i][j] + B[i][j];
+		}
+	}
+	return C;
+}
+
 
 double* qr_iterations(double** A, int n, int eps) {
 	do {
 		double** Q = NULL;
 		double** R = NULL;
-		householders_qr_decomposition(A, &Q, &R, n);
-		A = matrix_multiply(n, n, R, Q);
+		double** B = hessenberg_form(A, &Q, &R, n);
+		givens_decomposition(B, &Q, &R, 3);
+		double** A1 = matrix_multiply(n, n, R, Q);
+		free_matrix(A, n);
+		A = A1;
 		printf("\nA = \n");
 		print_matrix(A, 3, 3);
 		free_matrix(Q, n);
@@ -291,16 +333,44 @@ double* qr_iterations(double** A, int n, int eps) {
 
 int main(void) {
 	double** m = create_matrix(3, 3);
-	m[0][0] = 5;
-	m[0][2] = -3;
-	m[0][1] = 1;
-	m[1][0] = 3;
-	m[2][0] = -4;
-	m[1][1] = 0;
-	m[2][1] = -1;
-	m[2][2] = 1;
-	m[1][2] = -2;
+	//m[0][0] = m[0][2] = 1;
+	//m[0][1] = -2;
+	//m[1][0] = m[2][0] = 2;
+	//m[1][1] = 0;
+	//m[2][1] = m[2][2] = -1;
+	//m[1][2] = -3;
+
+	//m[0][0] = 5;
+	//m[1][0] = -5;
+	//m[2][0] = 0;
+	//m[0][1] = -3;
+	//m[1][1] = 2.08;
+	//m[2][1] = -0.44;
+	//m[0][2] = -1;
+	//m[1][2] = 0.56;
+	//m[2][2] = -1.08;
+
+	//m[0][0] = 5;
+	//m[1][0] = 3;
+	//m[2][0] = -4;
+	//m[0][1] = 1;
+	//m[1][1] = 0;
+	//m[2][1] = -1;
+	//m[0][2] = -3;
+	//m[1][2] = -2;
+	//m[2][2] = 1;
+
+
+	printf("m = \n");
+	print_matrix(m, 3, 3);
+	double** Q = NULL;
+	double** R = NULL;
+	//hessenberg_form(m, &Q, &R, 3);
+	//givens_decomposition(m, &Q, &R, 3);
+	//free_matrix(Q, 3);
+	//free_matrix(R, 3);
+
 	print_matrix(m, 3, 3);
 	double* solution = qr_iterations(m, 3, 3);
-	printf("%.3lf %.3lf %.3lf", solution[0], solution[1], solution[2]);
+	printf("\n%.3lf %.3lf %.3lf", solution[0], solution[1], solution[2]);
 }
