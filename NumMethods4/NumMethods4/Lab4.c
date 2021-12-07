@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdbool.h>
 #pragma warning(disable : 4996)
 
 void print_matrix(double** A, int N, int M)
@@ -8,7 +9,7 @@ void print_matrix(double** A, int N, int M)
 	printf("\n");
 	for (int i = 0; i < N; i++) {
 		for (int j = 0; j < M; j++) {
-			printf("%*.29lf ", 6, A[i][j]);
+			printf("%.3lf ", A[i][j]);
 		}
 		printf("\n");
 	}
@@ -63,6 +64,53 @@ void free_matrix(double** A, int n) { // there's n for sure
 	free(A);
 }
 
+double** transposed_matrix(double** a, int c, int r) {
+	double** a_t = create_matrix(r, c);
+	for (int i = 0; i < c; i++) {
+		for (int j = 0; j < r; j++) {
+			a_t[j][i] = a[i][j];
+		}
+	}
+	return a_t;
+}
+
+double** create_e_matrix(int c, int r) {
+	double** A = create_matrix(c, r);
+	for (int i = 0; i < c; i++) {
+		for (int j = 0; j < r; j++) {
+			if (i == j)
+				A[i][j] = 1;
+			else
+				A[i][j] = 0;
+		}
+	}
+	return A;
+}
+
+
+double vector_norm_2(double* A, int r) {
+	double norm = 0;
+	for (int i = 0; i < r; i++) {
+		norm += A[i] * A[i];
+	}
+	return sqrt(norm);
+}
+
+void A_n(int n, int i0, double** w, double** A) {
+	double* w_vec = *w; //one dimensional vec
+	double w_norm = vector_norm_2(w_vec, n);
+	double beta = 2.0 / (w_norm * w_norm);
+	for (int j = 0; j + i0 < n; j++) {
+		double column_base = 0;
+		for (int k = 0; k + i0 < n; k++) {
+			column_base += A[k + i0][j + i0] * w_vec[k];
+		}
+		for (int i = 0; i + i0 < n; i++) {
+			A[i + i0][j + i0] = A[i + i0][j + i0] - beta * column_base * w_vec[i];
+		}
+	}
+}
+
 // multiplication of c x c matrix on c x r matrix
 double** matrix_multiply(int c, int r, double** H, double** A) { //M is the rows of Matrix H, K is the columns of Matrix A, and N is the "count" of these parts that you have to add.
 	double** A1 = create_matrix(c, r);
@@ -99,23 +147,6 @@ double* vector_w(double* a, int r) {
 	return w;
 }
 
-
-// householders matrix is square.
-double** householder_matrix(double* a, int ñ) {
-
-	double* w = vector_w(a, ñ);
-	double** H = create_e_matrix(ñ, ñ);
-
-	for (int i = 0; i < ñ; i++) {
-		for (int j = 0; j < ñ; j++) {
-			H[i][j] -= 2 * (w[i] * w[j]);
-		}
-	}
-
-	free(w);
-	return H;
-}
-
 double** enlarge_matrix(double** m, int n) {
 	double** new_m = create_matrix(n + 1, n + 1);
 	for (int i = 0; i < n + 1; i++) {
@@ -136,8 +167,9 @@ double** enlarge_matrix(double** m, int n) {
 }
 
 
-void householders_qr_decomposition(double** A, int c, double*** Q, double*** R) {
+void householders_qr_decomposition(double** A, double*** Q, double*** R, int c) {
 	double** A1 = create_matrix(c, c);
+	double** B1 = create_matrix(c, 1);
 	for (int i = 0; i < c; i++) {
 		double** A_t = transposed_matrix(A, c, c);
 
@@ -176,7 +208,9 @@ void householders_qr_decomposition(double** A, int c, double*** Q, double*** R) 
 			P = enlarge_matrix(P, rang_diff);
 			rang_diff++;
 		}
-		if (i = 0) {
+		//printf("\nP = \n");
+		//print_matrix(P, 3, 3);
+		if (i == 0) {
 			(*Q) = P;
 		}
 		else {
@@ -184,7 +218,11 @@ void householders_qr_decomposition(double** A, int c, double*** Q, double*** R) 
 			free_matrix((*Q), c);
 			(*Q) = Q1;
 		}
-		A_n(c, i, w, A);
+		double** A1 = matrix_multiply(c, c, P, A);
+		free_matrix(A, c);
+		A = A1;
+		//printf("\nA = \n");
+		//print_matrix(A, 3, 3);
 
 
 		free_matrix(A_t, c);
@@ -192,25 +230,77 @@ void householders_qr_decomposition(double** A, int c, double*** Q, double*** R) 
 		free(w);
 	}
 	(*R) = A;
-	free_matrix(A, c);
+	printf("\nR = \n");
+	print_matrix((*R), 3, 3);
+	printf("\nQ = \n");
+	print_matrix((*Q), 3, 3);
 }
 
-
-
-double* qr_doubleshift_decomposition(double** A, int n, int eps) {
-	double** Q = NULL;
-	double** R = NULL;
-
-	double** P = create_e_matrix(c - i, c - i);
-	for (int m = 0; m < c - i; m++) {
-		for (int n = 0; n < c - i; n++) {
-			P[m][n] -= (2 / (w_norm*w_norm)) * w[0][m] * w[0][n];
+double* RotationsMethod(double** A, int n) {
+	double* X = create_zero_vector(n);
+	double cos, sin, a, b, tmp;
+	for (int i = 0; i < n; i++) { //column counter
+		for (int j = i + 1; j < n; j++) { //string numer counter
+			a = A[i][i];
+			b = A[j][i];
+			cos = a / sqrt(a * a + b * b);
+			sin = b / sqrt(a * a + b * b);
+			// cycle for inner product k is number of a column that * on cos and sin matrix
+			for (int k = i; k < n; k++) {
+				tmp = A[i][k];
+				A[i][k] = cos * A[i][k] + sin * A[j][k];
+				A[j][k] = -sin * tmp + cos * A[j][k];
+			}
 		}
 	}
-	int rang_diff = c - i;
-	while (rang_diff != c) {
-		P = enlarge_matrix(P, rang_diff);
-		rang_diff++;
-	}
+	return X;
 }
 
+
+bool eigennum_found(double** A, int n, int eps) {
+	double sum = 0;
+	for (int i = 0; i < n-1; i++) {
+		sum += A[i + 1][i] * A[i + 1][i];
+	}
+	if (sqrt(sum) >= pow(10,-eps)) {
+		return false;
+	}
+	return true;
+}
+
+
+double* qr_iterations(double** A, int n, int eps) {
+	do {
+		double** Q = NULL;
+		double** R = NULL;
+		householders_qr_decomposition(A, &Q, &R, n);
+		A = matrix_multiply(n, n, R, Q);
+		printf("\nA = \n");
+		print_matrix(A, 3, 3);
+		free_matrix(Q, n);
+		free_matrix(R, n);
+	} while (!eigennum_found(A, n, eps));
+
+	double* solution = (double*)malloc(n * sizeof(double));
+	for (int i = 0; i < n; i++) {
+		solution[i] = A[i][i];
+	}
+	return solution;
+}
+
+
+int main(void) {
+	double** m = create_matrix(3, 3);
+	m[0][0] = 5;
+	m[0][2] = -3;
+	m[0][1] = 1;
+	m[1][0] = 3;
+	m[2][0] = -4;
+	m[1][1] = 0;
+	m[2][1] = -1;
+	m[2][2] = 1;
+	m[1][2] = -2;
+	print_matrix(m, 3, 3);
+	double* solution = qr_iterations(m, 3, 3);
+	printf("%.3lf %.3lf %.3lf", solution[0], solution[1], solution[2]);
+}
