@@ -1,3 +1,4 @@
+
 graph1 = importdata('iter.csv');
 eps = graph1(:,1);
 iter = graph1(:,2);
@@ -14,16 +15,11 @@ Rang = importdata('D:\Git\GitHub\Numerical-Methods\NumMethods2\rang3.csv');
 hh = importdata('D:\Git\GitHub\Numerical-Methods\NumMethods2\householders_method\householders_method\time.csv');
 gs = importdata('time.csv')
 figure
-subplot(2,1,1)
-plot(Rang, hh);
+loglog(Rang, hh, 'LineWidth', 2);
 hold on
-title({'График зависимости времени выполнения метода'; 'от ранга матрицы (метод Хаусхолдера)'});
+title({'График зависимости времени выполнения метода'; 'от ранга матрицы'});
 xlabel('Ранг матрицы');
 ylabel('Время выполнения');
 grid on
-subplot(2,1,2)
-plot(Rang, gs);
-grid on
-title({'График зависимости времени выполнения метода'; 'от ранга матрицы (метод Зейделя)'});
-xlabel('Ранг матрицы');
-ylabel('Время выполнения');
+loglog(Rang, gs, 'LineWidth', 2);
+legend('Метод Хаусхолдера', 'Метод Зейделя', 'Location', 'SouthEast')

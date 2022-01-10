@@ -237,12 +237,12 @@ double* householders_method(double** A, double** B, int c) {
 		A_n(c, i, w, A);
 		/*free_matrix(A, c);
 		A = A1;*/
-		printf("A1 =\n");
-		for (int i = 0; i < c; i++) {
-			for (int j = 0; j < c; j++)
-				printf("\t%lf", A[i][j]);
-			printf("\n");
-		}
+		//printf("A1 =\n");
+		//for (int i = 0; i < c; i++) {
+		//	for (int j = 0; j < c; j++)
+		//		printf("\t%lf", A[i][j]);
+		//	printf("\n");
+		//}
 
 
 		//B1 = matrix_multiply(c, 1, P, B);
@@ -265,35 +265,35 @@ double* householders_method(double** A, double** B, int c) {
 
 int main(void) {
 	int n = 0;
-	double** m = create_matrix(3, 4);
-	m[0][0] = m[0][2] = 1;
-	m[0][1] = -2;
-	m[1][0] = m[2][0] = 2;
-	m[1][1] = 0;
-	m[2][1] = m[2][2] = -1;
-	m[1][2] = -3;
-	double** b = create_matrix(3, 1);
-	b[0][0] = 1;
-	b[1][0] = 8;
-	b[2][0] = 5;
-	printf("m =\n");
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++)
-			printf("\t%lf", m[i][j]);
-		printf("\n");
-	}
-	double* x = householders_method(m, b, 3);
-	for (int i = 0; i < 3; i++) {
-		printf("%lf ", x[i]);
-	}
-	free(x);
+	//double** m = create_matrix(3, 4);
+	//m[0][0] = m[0][2] = 1;
+	//m[0][1] = -2;
+	//m[1][0] = m[2][0] = 2;
+	//m[1][1] = 0;
+	//m[2][1] = m[2][2] = -1;
+	//m[1][2] = -3;
+	//double** b = create_matrix(3, 1);
+	//b[0][0] = 1;
+	//b[1][0] = 8;
+	//b[2][0] = 5;
+	//printf("m =\n");
+	//for (int i = 0; i < 3; i++) {
+	//	for (int j = 0; j < 3; j++)
+	//		printf("\t%lf", m[i][j]);
+	//	printf("\n");
+	//}
+	//double* x = householders_method(m, b, 3);
+	//for (int i = 0; i < 3; i++) {
+	//	printf("%lf ", x[i]);
+	//}
+	//free(x);
 
 
 	//remove("x.csv");
 	//remove("x1.csv");
-	//FILE* file_m = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\matrix.csv", "r");
-	//FILE* file_r = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\rang.csv", "r");
-	//FILE* file_rp = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\rp.csv", "r");
+	FILE* file_m = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\matrix.csv", "r");
+	FILE* file_r = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\rang.csv", "r");
+	FILE* file_rp = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\rp.csv", "r");
 	//for (int i = 0; i < 10; i++) {
 	//	double** A = read_matrix(file_m, file_r, &n);
 	//	double** B = read_b(file_rp, n);
@@ -331,23 +331,23 @@ int main(void) {
 	//fclose(file_r1);
 	//fclose(file_rp1);
 
-	//file_m = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\matrix2.csv", "r");
-	//file_r = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\rang3.csv", "r");
-	//file_rp = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\rp2.csv", "r");
+	file_m = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\matrix2.csv", "r");
+	file_r = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\rang3.csv", "r");
+	file_rp = fopen("D:\\Git\\GitHub\\Numerical-Methods\\NumMethods2\\rp2.csv", "r");
 
-	//remove("time.csv");
-	//for (int i = 10; i <= 400; i+=10) {
-	//	double** A = read_matrix(file_m, file_r, &n);
-	//	double** B = read_b(file_rp, n);
-	//	unsigned long t_before = clock();
-	//	double* x = householders_method(A, B, n);
-	//	double t = ((double)clock() - (double)t_before) / CLK_TCK;
-	//	FILE* file_t = fopen("time.csv", "a");
-	//	fprintf(file_t, "%.20lf ", t);
-	//	free(x);
-	//	fclose(file_t);
-	//}
-	//fclose(file_m);
-	//fclose(file_r);
-	//fclose(file_rp);
+	remove("time.csv");
+	for (int i = 10; i <= 400; i+=10) {
+		double** A = read_matrix(file_m, file_r, &n);
+		double** B = read_b(file_rp, n);
+		unsigned long t_before = clock();
+		double* x = householders_method(A, B, n);
+		double t = ((double)clock() - (double)t_before) / CLK_TCK;
+		FILE* file_t = fopen("time.csv", "a");
+		fprintf(file_t, "%.20lf ", t);
+		free(x);
+		fclose(file_t);
+	}
+	fclose(file_m);
+	fclose(file_r);
+	fclose(file_rp);
 }

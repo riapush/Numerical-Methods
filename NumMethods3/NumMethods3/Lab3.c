@@ -157,7 +157,7 @@ double* gauss_seidel_iterations(int n, double** A, double* B, int eps, int* m) {
 				x[i] = (B[i] - var) / A[i][i];
 			}
 			(*m)++;
-			//printf("x = %.3lf %.3lf %.3lf\n", x[0], x[1], x[2]);
+			printf("x = %.3lf %.3lf %.3lf\n", x[0], x[1], x[2]);
 		} while (!convergence(x,p,n,norm,pow(10,-eps)));
 	}
 	return x;
@@ -181,8 +181,12 @@ int main(void) {
 	//B[2] = 5.0 / 5;
 
 	//double* x = gauss_seidel_iterations(3, A, B, 3, &n);
+	//for (int i = 0; i < 3; i++) {
+	//	printf("%lf", x[i]);
+	//}
 
 	//free(B);
+	//free(x);
 	//free_matrix(A,3);
 
 	double** A;
@@ -200,7 +204,7 @@ int main(void) {
 		B = read_b(file_rp, n);
 		int m = 0;
 		double* x = gauss_seidel_iterations(n, A, B, i, &m);
-		fprintf(file_y, "%.100lf;%i\n ", pow(10,-i), m);
+		fprintf(file_y, "%.15lf;%i\n ", pow(10,-i), m);
 		for (int j = 0; j < n; j++) {
 			fprintf(file_x, "%.8lf;", x[j]);
 		}
@@ -228,11 +232,11 @@ int main(void) {
 		double** B = read_b(file_rp, n);
 		QueryPerformanceFrequency(&freq);
 		QueryPerformanceCounter(&begin);
-		for (int g = 0; g < 1000; g++) {
+		for (int g = 0; g < 10; g++) {
 			x = gauss_seidel_iterations(n, A, B, 15, &m);
 		}
 		QueryPerformanceCounter(&end);
-		dt = ((double)((end.QuadPart) - (begin.QuadPart))) / ((freq.QuadPart)*1000);
+		dt = ((double)((end.QuadPart) - (begin.QuadPart))) / ((freq.QuadPart)*10);
 		FILE* file_t = fopen("time.csv", "a");
 		fprintf(file_t, "%.20lf ", dt);
 		free(x);
