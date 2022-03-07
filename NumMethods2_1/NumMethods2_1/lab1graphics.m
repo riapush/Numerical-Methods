@@ -1,8 +1,8 @@
 all_cheb = importdata('cheb.csv');
 all_uni = importdata('uni.csv');
 all_cheb_nodes = fopen('cheb_points.csv', "r");
-all_uni_nodes = fopen('uni_points.csv', "r");
 cheb_x1 = fscanf(all_cheb_nodes, "%f;")'
+all_uni_nodes = fopen('uni_points.csv', "r");
 uni_x1 = fscanf(all_uni_nodes, "%f;")'
 
 f = @(x)(x.^2 - sin(10.*x));
@@ -60,8 +60,6 @@ for i = 1:1:22
     grid on
     semilogy(i+2, error_uni(i), '*g');
     title('Зависимость максимальной ошибки от количества узлов')
-    xlabel('Количество узлов');
-    ylabel('Модуль ошибки');
     legend('Чебышевская сетка', 'Равномерная сетка', 'Location', 'SouthWest');
     
     if i == 1
@@ -70,4 +68,3 @@ for i = 1:1:22
         pause(0.5)
     end
 end
-fclose('all');
