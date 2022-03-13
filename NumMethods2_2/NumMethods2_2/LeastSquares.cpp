@@ -89,7 +89,7 @@ void freeMatrix(double** A, int n) {
 	free(A);
 }
 
-double* leastSquaresMethod(double a, double b, int degree, int num_of_points) {
+double* leastSquaresMethod(double a, double b, int degree, int num_of_points, const char* filename) {
 
 	point_t* points = createTableFunc(b, a, num_of_points, f, uniformGrid); // array to store the x and y-axis data-points
 
@@ -114,6 +114,17 @@ double* leastSquaresMethod(double a, double b, int degree, int num_of_points) {
 			B[i][j] = X[i + j];
 		}
 	}
+	
+	FILE* file_stream = fopen(filename, "a");
+	for (int i = 0; i <= degree; i++) {
+		for (int j = 0; j <= degree; j++) {
+			fprintf(file_stream, "%.15lf; ", B[i][j]);
+		}
+		fprintf(file_stream, "\n");
+	}
+	fprintf(file_stream, "\n\n");
+	fclose(file_stream);
+
 	for (int i = 0; i <= degree; i++) {
 		B[i][degree + 1] = Y[i];
 	}
@@ -130,16 +141,22 @@ int main(void) {
 	remove("fixed_degree.csv");
 	remove("fixed_n.csv");
 	remove("uni_points.csv");
+	remove("for_cond_val.csv");
 	int num_of_points; //no. of data-points
 	int degree; //degree of polynomial
 	double a = -2;
 	double b = 2;
 
+
 	FILE* fixed_degree = fopen("fixed_degree.csv", "w");
-	degree = 6;
-	for (int num_of_points = 10; num_of_points < 206; num_of_points += 5) {
-		double* A = leastSquaresMethod(a, b, degree, num_of_points);
-		for (int i = 0; i < degree; ++i) {
+	degree = 5;
+	//double* A = leastSquaresMethod(a, b, degree, 100);
+	//for (int i = 0; i < degree + 1; i++) {
+	//printf("%lf ", A[i]);
+	//}
+	for (int num_of_points = 10; num_of_points <= 100; num_of_points += 1) {
+		double* A = leastSquaresMethod(a, b, degree, num_of_points, "dontmatter.csv");
+		for (int i = 0; i < degree + 1; ++i) {
 			fprintf(fixed_degree, "%.15lf ", A[i]);
 		}
 		fprintf(fixed_degree, "\n");
@@ -150,13 +167,22 @@ int main(void) {
 
 	FILE* fixed_n = fopen("fixed_n.csv", "w");
 	num_of_points = 50;
-	for (int degree = 2; degree < 50; degree += 2) {
-		double* A = leastSquaresMethod(a, b, degree, num_of_points);
-		for (int i = 0; i < degree; ++i) {
-			fprintf(fixed_n, "%.15lf ", A[i]);
+	for (int degree = 1; degree < 31; degree += 1) {
+		double* A = leastSquaresMethod(a, b, degree, num_of_points, "for_cond_val.csv");
+		for (int i = 0; i < degree + 1; ++i) {
+			fprintf(fixed_n, "%.15lf; ", A[i]);
 		}
 		fprintf(fixed_n, "\n");
 		free(A);
 	}
 	fclose(fixed_n);
+
+	FILE* comparison = fopen("comparison_2.csv", "w");
+	double* A = leastSquaresMethod(a, b, 14, 15, "dontmatter.csv");
+	for (int i = 0; i < 15; ++i) {
+		fprintf(comparison, "%.15lf; ", A[i]);
+	}
+	fprintf(comparison, "\n");
+	free(A);
+	fclose(comparison);
 }

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 #pragma warning(disable : 4996)
-#define DELTA 100.0
+#define DELTA 1000.0
 
 typedef struct {
 	double x;
@@ -115,4 +115,15 @@ double Hermit(point_t* points, int numOfPoints, double x) {
 		}
 		fclose(cheb);
 		fclose(uni);
+
+		FILE* comparison = fopen("comparison_1.csv", "a");
+		double x = a;
+		for (int i = 0; i < 1000; i++) {
+			point_t* points_uni = createTableFunc(b, a, 15, func, funcDer, uniformGrid);
+			double res_cheb = Hermit(points_uni, 15, x);
+			fprintf(comparison, "%.15lf;", res_cheb);
+
+			x += step;
+		}
+		fclose(comparison);
 	}
