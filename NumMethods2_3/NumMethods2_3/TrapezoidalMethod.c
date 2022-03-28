@@ -49,6 +49,9 @@ double trapezoidalMethod(double a, double b, double eps, double(*f)(double)) {
 	FILE* iter = fopen("iter.csv", "a");
 	fprintf(iter, "%i; ", dots);
 	fclose(iter);
+	FILE* splits = fopen("splits.csv", "a");
+	fprintf(splits, "%i; ", n);
+	fclose(splits);
 
 	return curr;
 }
