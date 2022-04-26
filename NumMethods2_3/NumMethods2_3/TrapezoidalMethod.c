@@ -76,9 +76,10 @@ int main(void) {
 	remove("err_opt.csv");
 	remove("iter.csv");
 	remove("iter_opt.csv");
+	remove("splits.csv");
 	FILE* err = fopen("err.csv", "w");
 	FILE* err_opt = fopen("err_opt.csv", "w");
-	for (int n = 1; n < 14; ++n) {
+	for (int n = 1; n < 13; ++n) {
 		fprintf(err, "%.15lf; ", trapezoidalMethod(0, 2, pow(10, -n), f));
 		fprintf(err_opt, "%.15lf; ", trapezoidalMethodOpt(0, 2, pow(10, -n), f));
 		dots = 0;
