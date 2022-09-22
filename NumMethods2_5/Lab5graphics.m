@@ -4,6 +4,7 @@ global_e = importdata('global.csv');
 num_sol = importdata('sol.csv');
 pert = importdata('pert.csv');
 pert_small = importdata('pert_small.csv');
+pert_verysmall = importdata('pert_verysmall.csv');
 pert_glob = importdata('pert_glob.csv');
 
 y = @(x)(x.*(x.*x+1));
@@ -58,8 +59,17 @@ hold on;
 grid on;
 ylabel('Относительная ошибка');
 per = [0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48, 40.96, 81.92];
-k = b - (b-a)/32;
 title({'Влияние ошибки в исходных данных на решение' '(все данные в процентах)'});
 for i = 1:1:14
-    semilogx(per(1,i), abs(pert_glob(1,i)-y(k))*100/abs(y(k)), '*');
+    semilogx(per(1,i), pert_glob(1,i)*100/abs(y(b)), '*');
 end
+
+figure
+xlabel('Возмущение');
+ylabel('Относительная ошибка');
+per_small = [0.001,0.002,0.004,0.008,0.016,0.032,0.064,0.128,0.256,0.512,1.024];
+for i = 1:1:11
+    loglog(per_small(1,i), pert_verysmall(i)*100/y(b), '*');
+    hold on;
+end
+grid on;

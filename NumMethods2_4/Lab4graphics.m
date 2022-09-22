@@ -23,7 +23,7 @@ loglog(eps, iter_non, 'LineWidth', 1);
 loglog(eps, lab3_iter, 'LineWidth', 1);
 xlabel('Заданная точность');
 ylabel('Количество разбиений');
-legend('smooth', 'non-smooth', 'lab 3');
+legend('Гладкая Гаусс', 'Негладкая Гаусс', 'Гладкая метод трапеции');
 title('Зависимость кол-ва разбиений от заданной точности');
 
 figure
@@ -36,7 +36,7 @@ loglog(eps,eps);
 xlabel('Заданная точность');
 ylabel('Погрешность');
 title('Зависимость погрешности от заданной точности');
-legend('smooth', 'non-smooth', 'lab 3', 'Location', 'SouthEast');
+legend('Гладкая ф-я Гаусс', 'Негладкая ф-я Гаусс', 'Гладкая метод трапеции', 'Негладкая метод трапеции', 'Location', 'SouthEast');
 
 figure
 loglog((b-a)./iter, abs(I_acc-I_num), 'LineWidth', 1);
